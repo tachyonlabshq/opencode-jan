@@ -1,15 +1,19 @@
-// Core types for LM Studio plugin
-export interface LMStudioModel {
+// Core types for Jan local API server plugin
+export interface JanModel {
   id: string
   object: string
   created: number
   owned_by: string
 }
 
-export interface LMStudioModelsResponse {
+export interface JanModelsResponse {
   object: string
-  data: LMStudioModel[]
+  data: JanModel[]
 }
+
+// Backward compatible aliases
+export type LMStudioModel = JanModel
+export type LMStudioModelsResponse = JanModelsResponse
 
 export type ModelType = 'chat' | 'embedding' | 'unknown'
 
@@ -54,7 +58,7 @@ export interface CacheStats {
   }>
 }
 
-export interface LMStudioValidationResult {
+export interface JanValidationResult {
   status: 'success' | 'error'
   model: string
   availableModels: string[]
@@ -77,3 +81,6 @@ export interface LMStudioValidationResult {
   }
   performanceHint?: string
 }
+
+// Backward compatible alias
+export type LMStudioValidationResult = JanValidationResult

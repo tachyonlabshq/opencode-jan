@@ -1,1 +1,1 @@
-export { LMStudioPlugin } from './plugin'
+export { JanPlugin, LMStudioPlugin } from './plugin'

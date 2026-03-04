@@ -1,28 +1,34 @@
-# opencode-lmstudio
+# opencode-jan
 
-OpenCode plugin for enhanced LM Studio support with auto-detection and dynamic model discovery.
+OpenCode plugin for Jan Local API Server with auto-detection, API-key-aware setup, and dynamic model discovery.
 
 ## Features
 
-- **Auto-detection**: Automatically detects LM Studio running on common ports (1234, 8080, 11434)
-- **Dynamic Model Discovery**: Queries LM Studio's `/v1/models` endpoint to discover available models
-- **Smart Model Formatting**: Automatically formats model names for better readability (e.g., "Qwen3 30B A3B" instead of "qwen/qwen3-30b-a3b")
-- **Organization Owner Extraction**: Extracts and sets `organizationOwner` field from model IDs
-- **Health Check Monitoring**: Verifies LM Studio is accessible before attempting operations
-- **Automatic Configuration**: Auto-creates `lmstudio` provider if detected but not configured
-- **Model Merging**: Intelligently merges discovered models with existing configuration
-- **Comprehensive Caching**: Reduces API calls with intelligent caching system
-- **Error Handling**: Smart error categorization with auto-fix suggestions
+- Auto-detection of Jan API Server endpoints (default `127.0.0.1:1337`)
+- Auto-setup of `provider.jan` when Jan is detected
+- API key detection from config or environment (`JAN_API_KEY`, `JAN_API_SERVER_KEY`, `OPENCODE_JAN_API_KEY`, `OPENAI_API_KEY`)
+- Dynamic model discovery from `GET /v1/models`
+- Smart model formatting and owner extraction
+- Model merging into existing OpenCode config
+- Runtime model validation in `chat.params`
+- Cache-backed model checks for lower API overhead
+- Actionable error handling for offline/unauthorized/missing model cases
 
 ## Installation
 
 ```bash
-npm install opencode-lmstudio
+npm install opencode-jan
 # or
-bun add opencode-lmstudio
+bun add opencode-jan
 ```
 
 ## Usage
+
+Set your Jan API key in your shell:
+
+```bash
+export JAN_API_KEY="your-jan-local-api-key"
+```
 
 Add the plugin to your `opencode.json`:
 
@@ -30,73 +36,40 @@ Add the plugin to your `opencode.json`:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "opencode-lmstudio@latest"
+    "opencode-jan@latest"
   ],
   "provider": {
-    "lmstudio": {
+    "jan": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "LM Studio (local)",
+      "name": "Jan API Server (local)",
       "options": {
-        "baseURL": "http://127.0.0.1:1234/v1"
+        "baseURL": "http://127.0.0.1:1337/v1",
+        "apiKey": "${JAN_API_KEY}"
       }
     }
   }
 }
 ```
 
-### Auto-detection
+## Auto Setup Behavior
 
-If you don't configure the `lmstudio` provider, the plugin will automatically detect LM Studio if it's running on one of the common ports and create the provider configuration for you.
+If `provider.jan` is missing, the plugin attempts to detect Jan automatically and creates it for you.
 
-### Manual Configuration
+Detection checks:
 
-You can also manually configure the provider with specific models:
+- Common Jan local endpoints (`127.0.0.1:1337`, `localhost:1337`, plus common alternates)
+- API key from provider config or environment variables
+- OpenAI-compatible model endpoint health via `/v1/models`
 
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": [
-    "opencode-lmstudio@latest"
-  ],
-  "provider": {
-    "lmstudio": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "LM Studio (local)",
-      "options": {
-        "baseURL": "http://127.0.0.1:1234/v1"
-      },
-      "models": {
-        "google/gemma-3n-e4b": {
-          "name": "Gemma 3n-e4b (local)"
-        }
-      }
-    }
-  }
-}
-```
-
-The plugin will automatically discover and add any additional models available in LM Studio that aren't already configured.
-
-## How It Works
-
-1. On OpenCode startup, the plugin's `config` hook is called
-2. If an `lmstudio` provider is found, it checks if LM Studio is accessible
-3. If not configured, it attempts to auto-detect LM Studio on common ports
-4. If accessible, it queries the `/v1/models` endpoint
-5. Discovered models are merged into your configuration
-6. The enhanced configuration is used for the current session
+If Jan is reachable but unauthorized, the plugin keeps configuration safe and prompts you to set a valid API key.
 
 ## Requirements
 
 - OpenCode with plugin support
-- LM Studio running locally (default port: 1234)
-- LM Studio server API accessible at `http://127.0.0.1:1234/v1`
+- Jan Desktop app running
+- Local API Server started in Jan (`Settings > Local API Server`)
+- Valid API key configured in Jan and provided to OpenCode
 
 ## License
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-

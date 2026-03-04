@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "opencode-lmstudio",
+  "name": "opencode-jan",
   "version": "0.3.0",
-  "description": "OpenCode plugin for enhanced LM Studio support with auto-detection and dynamic model discovery",
+  "description": "OpenCode plugin for Jan Local API Server with auto-setup and dynamic model discovery",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
@@ -17,8 +17,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts",
+    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts --fix",
     "build": "npm run typecheck && npm run test:run",
     "validate": "npm run lint && npm run typecheck && npm run test:run",
     "validate:config": "bun scripts/validate-config.ts",
@@ -27,8 +27,8 @@
   },
   "keywords": [
     "opencode",
-    "lmstudio",
-    "lm-studio",
+    "jan",
+    "jan.ai",
     "plugin",
     "local-llm",
     "openai-compatible"
@@ -37,12 +37,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agustif/opencode-lmstudio.git"
+    "url": "git+https://github.com/8888mkw8888/opencode-jan.git"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.0.166"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
     "@types/node": "^25.0.3",
     "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.39.2",

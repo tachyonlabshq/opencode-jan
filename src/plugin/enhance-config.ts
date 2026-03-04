@@ -1,105 +1,173 @@
 import { ModelStatusCache } from '../cache/model-status-cache'
 import { ToastNotifier } from '../ui/toast-notifier'
 import { categorizeModel, formatModelName, extractModelOwner } from '../utils'
-import { normalizeBaseURL, checkLMStudioHealth, discoverLMStudioModels, autoDetectLMStudio } from '../utils/lmstudio-api'
+import {
+  normalizeBaseURL,
+  normalizeProviderBaseURL,
+  discoverLMStudioModels,
+  autoDetectLMStudio,
+  extractProviderAPIKey,
+  getCandidateAPIKeys,
+} from '../utils/lmstudio-api'
 import type { PluginInput } from '@opencode-ai/plugin'
-import type { LMStudioModel } from '../types'
+import type { JanModel } from '../types'
 
 const modelStatusCache = new ModelStatusCache()
 
+function getProvider(config: any): { id: 'jan' | 'lmstudio' | null; provider: any | null } {
+  if (config?.provider?.jan) {
+    return { id: 'jan', provider: config.provider.jan }
+  }
+
+  if (config?.provider?.lmstudio) {
+    return { id: 'lmstudio', provider: config.provider.lmstudio }
+  }
+
+  return { id: null, provider: null }
+}
+
+function ensureProviderDefaults(provider: any): void {
+  if (!provider.npm) {
+    provider.npm = '@ai-sdk/openai-compatible'
+  }
+
+  if (!provider.name) {
+    provider.name = 'Jan API Server (local)'
+  }
+
+  if (!provider.options) {
+    provider.options = {}
+  }
+
+  if (!provider.models) {
+    provider.models = {}
+  }
+}
+
 export async function enhanceConfig(
   config: any,
-  _client: PluginInput['client'], // client not used but kept for interface compatibility
-  toastNotifier: ToastNotifier
+  _client: PluginInput['client'], // kept for interface compatibility
+  toastNotifier: ToastNotifier,
 ): Promise<void> {
   try {
-    let lmstudioProvider = config.provider?.lmstudio
+    let { id: providerID, provider } = getProvider(config)
     let baseURL: string
+    let apiKey: string | undefined
 
-    // If lmstudio provider exists, use its baseURL
-    if (lmstudioProvider) {
-      baseURL = normalizeBaseURL(lmstudioProvider.options?.baseURL || "http://127.0.0.1:1234")
-    } else {
-      // Try to auto-detect LM Studio
-      const detectedURL = await autoDetectLMStudio()
-      if (!detectedURL) {
-        return // No LM Studio found
+    if (provider) {
+      ensureProviderDefaults(provider)
+      baseURL = normalizeBaseURL(provider.options?.baseURL || 'http://127.0.0.1:1337')
+
+      const explicitKey = extractProviderAPIKey(provider.options)
+      const keyCandidates = getCandidateAPIKeys(explicitKey)
+      apiKey = keyCandidates[0]
+
+      if (!provider.options.apiKey && apiKey) {
+        provider.options.apiKey = apiKey
       }
-      
-      // Auto-create lmstudio provider if detected
-      baseURL = detectedURL
+
+      provider.options.baseURL = normalizeProviderBaseURL(provider.options.baseURL || baseURL)
+    } else {
+      const detected = await autoDetectLMStudio()
+      if (!detected) {
+        return
+      }
+
       if (!config.provider) {
         config.provider = {}
       }
-      config.provider.lmstudio = {
-        npm: "@ai-sdk/openai-compatible",
-        name: "LM Studio (local)",
+
+      config.provider.jan = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'Jan API Server (local)',
         options: {
-          baseURL: `${baseURL}/v1`,
+          baseURL: detected.providerBaseURL,
         },
         models: {},
       }
-      lmstudioProvider = config.provider.lmstudio
+
+      if (detected.apiKey) {
+        config.provider.jan.options.apiKey = detected.apiKey
+      }
+
+      providerID = 'jan'
+      provider = config.provider.jan
+      baseURL = detected.baseURL
+      apiKey = detected.apiKey
+
+      if (detected.status === 'unauthorized') {
+        console.warn('[opencode-jan] Jan server detected but API key is missing/invalid')
+        await toastNotifier.warning(
+          'Jan API server detected, but requests are unauthorized. Set JAN_API_KEY or provider.options.apiKey.',
+          'Jan API Key Required',
+          7000,
+        )
+      }
     }
 
-    // Check health first
-    const isHealthy = await checkLMStudioHealth(baseURL)
-    if (!isHealthy) {
-      console.warn("[opencode-lmstudio] LM Studio appears to be offline", { baseURL })
+    if (!provider || !providerID) {
       return
     }
 
-    // Try to discover models from LM Studio API
-    let models: LMStudioModel[]
+    let models: JanModel[]
     try {
-      models = await discoverLMStudioModels(baseURL)
+      models = await discoverLMStudioModels(baseURL, apiKey)
     } catch (error) {
-      console.warn("[opencode-lmstudio] Model discovery failed", { 
-        error: error instanceof Error ? error.message : String(error) 
-      })
+      const message = error instanceof Error ? error.message : String(error)
+
+      if (message.includes('AUTH_REQUIRED')) {
+        console.warn('[opencode-jan] Jan API key missing/invalid. Model discovery skipped.', {
+          baseURL,
+          provider: providerID,
+        })
+        return
+      }
+
+      if (message.includes('ENDPOINT_NOT_FOUND')) {
+        console.warn('[opencode-jan] Jan API endpoint not found. Check API prefix/base URL.', {
+          baseURL,
+          providerBaseURL: provider.options?.baseURL,
+        })
+        return
+      }
+
+      console.warn('[opencode-jan] Model discovery failed', { message, baseURL })
       return
     }
-    
+
     if (models.length > 0) {
-      // Merge discovered models with configured models
-      const existingModels = lmstudioProvider.models || {}
+      const existingModels = provider.models || {}
       const discoveredModels: Record<string, any> = {}
       let chatModelsCount = 0
       let embeddingModelsCount = 0
 
       for (const model of models) {
-        // Use model ID as key directly for better readability, fallback to sanitized version
-        let modelKey = model.id
-        if (!/^[a-zA-Z0-9_-]+$/.test(modelKey)) {
-          modelKey = model.id.replace(/[^a-zA-Z0-9_-]/g, "_")
-        }
-        
+        const modelKey = model.id
+
         // Only add if not already configured
-        if (!existingModels[modelKey] && !existingModels[model.id]) {
+        if (!existingModels[modelKey]) {
           const modelType = categorizeModel(model.id)
           const owner = extractModelOwner(model.id)
           const modelConfig: any = {
             id: model.id,
             name: formatModelName(model),
           }
-          
-          // Add owner if available
+
           if (owner) {
             modelConfig.organizationOwner = owner
           }
 
-          // Add additional metadata based on model type
           if (modelType === 'embedding') {
             embeddingModelsCount++
             modelConfig.modalities = {
-              input: ["text"],
-              output: ["embedding"]
+              input: ['text'],
+              output: ['embedding'],
             }
           } else if (modelType === 'chat') {
             chatModelsCount++
             modelConfig.modalities = {
-              input: ["text", "image"],
-              output: ["text"]
+              input: ['text', 'image'],
+              output: ['text'],
             }
           }
 
@@ -107,50 +175,44 @@ export async function enhanceConfig(
         }
       }
 
-      // Merge discovered models into config
       if (Object.keys(discoveredModels).length > 0) {
-        if (!config.provider.lmstudio) {
-          return
-        }
-        
-        config.provider.lmstudio.models = {
+        provider.models = {
           ...existingModels,
           ...discoveredModels,
         }
 
-        // Provide helpful guidance if no chat models are available
         if (chatModelsCount === 0 && embeddingModelsCount > 0) {
-          console.warn("[opencode-lmstudio] Only embedding models found. To use chat models:", {
+          console.warn('[opencode-jan] Only embedding models found. To use chat models:', {
             steps: [
-              "1. Open LM Studio application",
-              "2. Download a chat model (e.g., llama-3.2-3b-instruct)",
-              "3. Load the model in LM Studio",
-              "4. Ensure server is running"
-            ]
+              '1. Open Jan > Hub',
+              '2. Download a chat-capable model',
+              '3. Start the model in Jan',
+              '4. Retry your OpenCode request',
+            ],
           })
         }
       }
     } else {
-      console.warn("[opencode-lmstudio] No models found in LM Studio. Please:", {
+      console.warn('[opencode-jan] No models returned by Jan API server. Please:', {
         steps: [
-          "1. Open LM Studio application",
-          "2. Download and load a model",
-          "3. Start the server"
-        ]
+          '1. Open Jan desktop app',
+          '2. Start at least one model',
+          '3. Ensure Local API Server is running',
+          '4. Confirm API key and base URL are correct',
+        ],
       })
     }
-    
+
     // Warm up the cache with current model status
     try {
       await modelStatusCache.getModels(baseURL, async () => {
-        return await discoverLMStudioModels(baseURL).then(models => models.map(m => m.id))
+        return await discoverLMStudioModels(baseURL, apiKey).then(items => items.map(model => model.id))
       })
-    } catch (error) {
-      // Cache warming failed, but not critical
+    } catch {
+      // cache warming is non-critical
     }
   } catch (error) {
-    console.error("[opencode-lmstudio] Unexpected error in enhanceConfig:", error)
-    toastNotifier.warning("Plugin configuration failed", "Configuration Error").catch(() => {})
+    console.error('[opencode-jan] Unexpected error in enhanceConfig:', error)
+    toastNotifier.warning('Plugin configuration failed', 'Configuration Error').catch(() => {})
   }
 }
-

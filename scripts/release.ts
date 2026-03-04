@@ -81,19 +81,19 @@ ${commits}
 ### Installation
 
 \`\`\`bash
-npm install opencode-lmstudio@${version}
+npm install opencode-jan@${version}
 # or
-bun add opencode-lmstudio@${version}
+bun add opencode-jan@${version}
 \`\`\`
 
 ### Features
 
-- **Auto-detection**: Automatically detects LM Studio running on common ports
-- **Dynamic Model Discovery**: Queries LM Studio's \`/v1/models\` endpoint
+- **Auto-detection**: Automatically detects Jan API Server running on common ports
+- **Dynamic Model Discovery**: Queries Jan API Server's \`/v1/models\` endpoint
 - **Smart Model Formatting**: Automatically formats model names for better readability
 - **Organization Owner Extraction**: Extracts and sets \`organizationOwner\` field
-- **Health Check Monitoring**: Verifies LM Studio is accessible
-- **Automatic Configuration**: Auto-creates \`lmstudio\` provider if detected
+- **Health Check Monitoring**: Verifies Jan API Server is accessible
+- **Automatic Configuration**: Auto-creates \`jan\` provider if detected
 - **Model Merging**: Intelligently merges discovered models with existing configuration
 - **Comprehensive Caching**: Reduces API calls with intelligent caching
 - **Error Handling**: Smart error categorization with auto-fix suggestions`
@@ -143,7 +143,7 @@ async function main() {
   
   try {
     execSync(`gh release create ${tagName} --title "v${newVersion}" --notes-file ${notesFile}`, { stdio: 'inherit' })
-    console.log(`✓ GitHub release created: https://github.com/agustif/opencode-lmstudio/releases/tag/${tagName}`)
+    console.log(`✓ GitHub release created: https://github.com/8888mkw8888/opencode-jan/releases/tag/${tagName}`)
   } catch (error) {
     console.warn('⚠️  GitHub release creation failed (may already exist)')
   }
@@ -161,8 +161,8 @@ async function main() {
   
   try {
     runCommand('npm publish', 'Publishing to npm')
-    console.log(`\n✅ Successfully published opencode-lmstudio@${newVersion} to npm!`)
-    console.log(`   https://www.npmjs.com/package/opencode-lmstudio`)
+    console.log(`\n✅ Successfully published opencode-jan@${newVersion} to npm!`)
+    console.log(`   https://www.npmjs.com/package/opencode-jan`)
     npmPublished = true
   } catch (error) {
     console.error('\n⚠️  npm publish failed. Common reasons:')
@@ -183,12 +183,12 @@ async function main() {
   if (npmPublished) {
     console.log(`\n🎉 Release ${newVersion} completed successfully!`)
     console.log(`   - Git tag: ${tagName}`)
-    console.log(`   - GitHub: https://github.com/agustif/opencode-lmstudio/releases/tag/${tagName}`)
-    console.log(`   - npm: https://www.npmjs.com/package/opencode-lmstudio`)
+    console.log(`   - GitHub: https://github.com/8888mkw8888/opencode-jan/releases/tag/${tagName}`)
+    console.log(`   - npm: https://www.npmjs.com/package/opencode-jan`)
   } else {
     console.log(`\n✅ Release ${newVersion} partially completed!`)
     console.log(`   - Git tag: ${tagName} ✓`)
-    console.log(`   - GitHub: https://github.com/agustif/opencode-lmstudio/releases/tag/${tagName} ✓`)
+    console.log(`   - GitHub: https://github.com/8888mkw8888/opencode-jan/releases/tag/${tagName} ✓`)
     console.log(`   - npm: Manual publish required (see instructions above)`)
   }
 }
@@ -197,4 +197,3 @@ main().catch((error) => {
   console.error('\n❌ Release failed:', error.message)
   process.exit(1)
 })
-

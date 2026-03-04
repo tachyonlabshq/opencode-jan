@@ -90,7 +90,7 @@ export async function retryWithBackoff<T>(
       }
       
       const delay = baseDelay * Math.pow(2, attempt)
-      console.warn(`[opencode-lmstudio] Retrying operation after ${delay}ms`, { 
+      console.warn(`[opencode-jan] Retrying operation after ${delay}ms`, { 
         attempt: attempt + 1, 
         maxRetries: maxRetries + 1,
         error: error instanceof Error ? error.message : String(error)
@@ -107,11 +107,11 @@ export function categorizeError(error: any, context: { baseURL: string; modelId:
   const { baseURL, modelId } = context
   
   // Network/connection issues
-  if (errorStr.includes('econnrefused') || errorStr.includes('fetch failed') || errorStr.includes('network')) {
+  if (errorStr.includes('econnrefused') || errorStr.includes('fetch failed') || errorStr.includes('network_error') || errorStr.includes('network')) {
     return {
       type: 'offline',
       severity: 'critical',
-      message: `Cannot connect to LM Studio at ${baseURL}. Ensure LM Studio is running and server is active.`,
+      message: `Cannot connect to Jan API Server at ${baseURL}. Ensure Jan is running and Local API Server is active.`,
       canRetry: true,
       autoFixAvailable: true
     }
@@ -122,29 +122,29 @@ export function categorizeError(error: any, context: { baseURL: string; modelId:
     return {
       type: 'timeout',
       severity: 'medium',
-      message: `Request to LM Studio timed out. This might happen with large models or slow systems.`,
+      message: `Request to Jan API timed out. This can happen with large models or a busy machine.`,
       canRetry: true,
       autoFixAvailable: false
     }
   }
   
   // Model not found
-  if (errorStr.includes('404') || errorStr.includes('not found')) {
+  if (errorStr.includes('404') || errorStr.includes('not found') || errorStr.includes('endpoint_not_found')) {
     return {
       type: 'not_found',
       severity: 'high',
-      message: `Model '${modelId}' not found. Check if model is installed in LM Studio.`,
+      message: `Model '${modelId}' was not found. Verify the model is available in Jan and API Prefix is correct.`,
       canRetry: false,
       autoFixAvailable: false
     }
   }
   
   // Permission issues
-  if (errorStr.includes('401') || errorStr.includes('403') || errorStr.includes('unauthorized')) {
+  if (errorStr.includes('401') || errorStr.includes('403') || errorStr.includes('unauthorized') || errorStr.includes('auth_required')) {
     return {
       type: 'permission',
       severity: 'high',
-      message: `Authentication or permission issue with LM Studio. Check your configuration.`,
+      message: `Authentication issue with Jan API server. Check Authorization Bearer API key configuration.`,
       canRetry: false,
       autoFixAvailable: false
     }
@@ -167,21 +167,23 @@ export function generateAutoFixSuggestions(errorCategory: ModelValidationError):
   switch (errorCategory.type) {
     case 'offline':
       suggestions.push({
-        action: "Check if LM Studio is running",
+        action: "Check if Jan API Server is running",
         steps: [
-          "1. Open LM Studio application",
-          "2. Verify the server is started (green indicator)",
-          "3. Check the server URL and port",
-          "4. Ensure the server is not blocked by firewall"
+          "1. Open Jan desktop app",
+          "2. Go to Settings > Local API Server",
+          "3. Click Start Server",
+          "4. Verify host/port (default 127.0.0.1:1337)",
+          "5. Ensure the server is not blocked by firewall"
         ],
         automated: false
       })
       suggestions.push({
-        action: "Try alternative ports",
+        action: "Verify API key and endpoint",
         steps: [
-          "1. Check if LM Studio is running on a different port",
-          "2. Common ports: 1234, 8080, 11434",
-          "3. Update your OpenCode configuration with the correct port"
+          "1. Set a Local API Server key in Jan",
+          "2. Export JAN_API_KEY in your shell",
+          "3. Check the server URL and port",
+          "4. Confirm API prefix (default /v1)"
         ],
         automated: false
       })
@@ -189,13 +191,12 @@ export function generateAutoFixSuggestions(errorCategory: ModelValidationError):
       
     case 'not_found':
       suggestions.push({
-        action: "Browse and install model",
+        action: "Use an available Jan model ID",
         steps: [
-          "1. Open LM Studio",
-          "2. Click the search icon (🔍) in the sidebar",
-          "3. Search for your desired model",
-          "4. Click 'Download' and wait for completion",
-          "5. Load the model after download"
+          "1. Open Jan > Hub and download your model",
+          "2. Start the model in Jan",
+          "3. Run GET /v1/models to list valid IDs",
+          "4. Use one exact model ID in your request"
         ],
         automated: false
       })

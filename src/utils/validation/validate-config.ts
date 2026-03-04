@@ -1,5 +1,9 @@
 import type { ValidationResult } from './validation-result'
 
+function getLocalProvider(config: any): any {
+  return config.provider?.jan || config.provider?.lmstudio
+}
+
 export function validateConfig(config: any): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
@@ -11,34 +15,38 @@ export function validateConfig(config: any): ValidationResult {
 
   // Validate provider configuration
   if (config.provider && typeof config.provider === 'object') {
-    const lmstudio = config.provider.lmstudio
-    if (lmstudio) {
+    const jan = getLocalProvider(config)
+    if (jan) {
       // Auto-fix missing required fields instead of failing
-      if (!lmstudio.npm) {
-        lmstudio.npm = "@ai-sdk/openai-compatible"
-        warnings.push('LM Studio provider missing npm field, auto-set to @ai-sdk/openai-compatible')
+      if (!jan.npm) {
+        jan.npm = '@ai-sdk/openai-compatible'
+        warnings.push('Jan provider missing npm field, auto-set to @ai-sdk/openai-compatible')
       }
-      if (!lmstudio.name) {
-        lmstudio.name = "LM Studio (local)"
-        warnings.push('LM Studio provider missing name field, auto-set to "LM Studio (local)"')
+      if (!jan.name) {
+        jan.name = 'Jan API Server (local)'
+        warnings.push('Jan provider missing name field, auto-set to "Jan API Server (local)"')
       }
-      if (!lmstudio.options) {
-        lmstudio.options = {}
-        warnings.push('LM Studio provider missing options field, auto-created empty options')
+      if (!jan.options) {
+        jan.options = {}
+        warnings.push('Jan provider missing options field, auto-created empty options')
       } else {
         // Validate options
-        if (!lmstudio.options.baseURL) {
-          warnings.push('LM Studio provider missing baseURL, will use default')
-        } else if (typeof lmstudio.options.baseURL !== 'string') {
-          errors.push('LM Studio provider baseURL must be a string')
-        } else if (!isValidURL(lmstudio.options.baseURL)) {
-          warnings.push('LM Studio provider baseURL may be invalid')
+        if (!jan.options.baseURL) {
+          warnings.push('Jan provider missing baseURL, will use default http://127.0.0.1:1337/v1')
+        } else if (typeof jan.options.baseURL !== 'string') {
+          errors.push('Jan provider baseURL must be a string')
+        } else if (!isValidURL(jan.options.baseURL)) {
+          warnings.push('Jan provider baseURL may be invalid')
+        }
+
+        if (jan.options.apiKey !== undefined && typeof jan.options.apiKey !== 'string') {
+          errors.push('Jan provider apiKey must be a string when provided')
         }
       }
 
       // Validate models configuration
-      if (lmstudio.models && typeof lmstudio.models !== 'object') {
-        errors.push('LM Studio provider models must be an object')
+      if (jan.models && typeof jan.models !== 'object') {
+        errors.push('Jan provider models must be an object')
       }
     }
   }
@@ -46,7 +54,7 @@ export function validateConfig(config: any): ValidationResult {
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   }
 }
 
@@ -58,4 +66,3 @@ function isValidURL(url: string): boolean {
     return false
   }
 }
-

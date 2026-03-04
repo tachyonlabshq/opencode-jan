@@ -5,7 +5,7 @@ export function validateLMStudioResponse(data: any): ValidationResult {
   const warnings: string[] = []
 
   if (!data || typeof data !== 'object') {
-    errors.push('LM Studio response must be an object')
+    errors.push('Jan API response must be an object')
     return { isValid: false, errors, warnings }
   }
 
@@ -19,7 +19,7 @@ export function validateLMStudioResponse(data: any): ValidationResult {
       }
     })
   } else {
-    warnings.push('LM Studio response missing data array or data is not an array')
+    warnings.push('Jan API response missing data array or data is not an array')
   }
 
   return {
@@ -28,4 +28,3 @@ export function validateLMStudioResponse(data: any): ValidationResult {
     warnings
   }
 }
-

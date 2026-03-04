@@ -21,7 +21,7 @@ export class ModelLoadingMonitor {
       progress: 0
     })
     
-    console.info(`[opencode-lmstudio] Started monitoring model loading`, { modelId, baseURL })
+    console.info(`[opencode-jan] Started monitoring model loading`, { modelId, baseURL })
     
     // Clear any existing interval
     this.stopMonitoring(modelId)
@@ -48,7 +48,7 @@ export class ModelLoadingMonitor {
     if (interval) {
       clearInterval(interval)
       this.pollingIntervals.delete(modelId)
-      console.debug(`[opencode-lmstudio:DEBUG] Stopped monitoring model`, { modelId })
+      console.debug(`[opencode-jan:DEBUG] Stopped monitoring model`, { modelId })
     }
   }
   
@@ -69,7 +69,7 @@ export class ModelLoadingMonitor {
         const duration = Date.now() - (state.startTime || Date.now())
         this.updateState(modelId, 'loaded', 100, 0)
         this.stopMonitoring(modelId)
-        console.info(`[opencode-lmstudio] Model loading completed`, { 
+        console.info(`[opencode-jan] Model loading completed`, { 
           modelId, 
           duration: `${duration}ms`,
           totalModels: this.loadingStates.size
@@ -112,11 +112,11 @@ export class ModelLoadingMonitor {
     // Log state changes
     if (currentState.status !== status) {
       if (status === 'loaded') {
-        console.info(`[opencode-lmstudio] Model loading completed`, { modelId })
+        console.info(`[opencode-jan] Model loading completed`, { modelId })
       } else if (status === 'error') {
-        console.warn(`[opencode-lmstudio] Model loading failed`, { modelId, error })
+        console.warn(`[opencode-jan] Model loading failed`, { modelId, error })
       } else if (status === 'loading') {
-        console.info(`[opencode-lmstudio] Model loading started`, { modelId })
+        console.info(`[opencode-jan] Model loading started`, { modelId })
       }
     }
   }
@@ -138,6 +138,6 @@ export class ModelLoadingMonitor {
       this.pollingIntervals.delete(modelId)
     }
     this.loadingStates.clear()
-    console.debug(`[opencode-lmstudio:DEBUG] Cleaned up all monitoring states`)
+    console.debug(`[opencode-jan:DEBUG] Cleaned up all monitoring states`)
   }
 }

@@ -5,14 +5,13 @@ export function createEventHook() {
     // Validate event input
     const validation = validateHookInput('event', { event })
     if (!validation.isValid) {
-      console.error("[opencode-lmstudio] Invalid event input:", validation.errors)
+      console.error('[opencode-jan] Invalid event input:', validation.errors)
       return
     }
     
-    // Monitor for session events to provide LM Studio status
+    // Monitor for session events to provide Jan API status
     if (event.type === "session.created" || event.type === "session.updated") {
-      // Could add health check monitoring here in the future
+      // Could add Jan health check monitoring here in the future
     }
   }
 }
-
