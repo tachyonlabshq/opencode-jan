@@ -37,7 +37,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/8888mkw8888/opencode-jan.git"
+    "url": "git+https://github.com/tachyonlabshq/opencode-jan.git"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.0.166"

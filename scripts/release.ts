@@ -143,7 +143,7 @@ async function main() {
   
   try {
     execSync(`gh release create ${tagName} --title "v${newVersion}" --notes-file ${notesFile}`, { stdio: 'inherit' })
-    console.log(`✓ GitHub release created: https://github.com/8888mkw8888/opencode-jan/releases/tag/${tagName}`)
+    console.log(`✓ GitHub release created: https://github.com/tachyonlabshq/opencode-jan/releases/tag/${tagName}`)
   } catch (error) {
     console.warn('⚠️  GitHub release creation failed (may already exist)')
   }
@@ -183,12 +183,12 @@ async function main() {
   if (npmPublished) {
     console.log(`\n🎉 Release ${newVersion} completed successfully!`)
     console.log(`   - Git tag: ${tagName}`)
-    console.log(`   - GitHub: https://github.com/8888mkw8888/opencode-jan/releases/tag/${tagName}`)
+    console.log(`   - GitHub: https://github.com/tachyonlabshq/opencode-jan/releases/tag/${tagName}`)
     console.log(`   - npm: https://www.npmjs.com/package/opencode-jan`)
   } else {
     console.log(`\n✅ Release ${newVersion} partially completed!`)
     console.log(`   - Git tag: ${tagName} ✓`)
-    console.log(`   - GitHub: https://github.com/8888mkw8888/opencode-jan/releases/tag/${tagName} ✓`)
+    console.log(`   - GitHub: https://github.com/tachyonlabshq/opencode-jan/releases/tag/${tagName} ✓`)
     console.log(`   - npm: Manual publish required (see instructions above)`)
   }
 }
