@@ -33,7 +33,7 @@ Default endpoint is usually:
 ### 3) Set API key once in shell
 
 ```bash
-export JAN_API_KEY='hOpZaFFfLeoR'
+export JAN_API_KEY="your-jan-local-api-key"
 ```
 
 ### 4) Add plugin to `opencode.json`
@@ -67,7 +67,7 @@ Use this only if you want explicit control:
       "name": "Jan API Server (local)",
       "options": {
         "baseURL": "http://127.0.0.1:1337/v1",
-        "apiKey": "hOpZaFFfLeoR"
+        "apiKey": "${JAN_API_KEY}"
       }
     }
   }
@@ -91,7 +91,7 @@ If Jan is reachable but unauthorized, the plugin keeps configuration safe and pr
 You can verify Jan server access directly:
 
 ```bash
-curl http://127.0.0.1:1337/v1/models -H "Authorization: Bearer hOpZaFFfLeoR"
+curl http://127.0.0.1:1337/v1/models -H "Authorization: Bearer $JAN_API_KEY"
 ```
 
 ## Requirements
