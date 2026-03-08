@@ -13,9 +13,9 @@ This is the simplest flow, equivalent to the original plugin experience:
 ### 1) Install
 
 ```bash
-npm install opencode-jan
+npm install github:tachyonlabshq/opencode-jan
 # or
-bun add opencode-jan
+bun add tachyonlabshq/opencode-jan
 ```
 
 ### 2) Start Jan Local API Server
@@ -44,7 +44,7 @@ Minimal config (recommended):
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "opencode-jan@latest"
+    "opencode-jan"
   ]
 }
 ```
@@ -59,7 +59,7 @@ Use this only if you want explicit control:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "opencode-jan@latest"
+    "opencode-jan"
   ],
   "provider": {
     "jan": {
@@ -92,6 +92,43 @@ You can verify Jan server access directly:
 
 ```bash
 curl http://127.0.0.1:1337/v1/models -H "Authorization: Bearer $JAN_API_KEY"
+```
+
+## Exact Model ID Fix
+
+Jan requires the exact model `id` returned by `/v1/models`.
+
+Example:
+
+- This may fail: `Qwen3.5-27B-Heretic-I1-GGUF`
+- This is what Jan may actually expose: `Qwen3_5-27B-heretic_i1-IQ4_XS`
+
+If OpenCode reports:
+
+- `Not Found: No running session found for model '...'`
+
+check the exact Jan model IDs:
+
+```bash
+curl -s http://127.0.0.1:1337/v1/models \
+  -H "Authorization: Bearer $JAN_API_KEY"
+```
+
+Then use the exact returned `id` in your config:
+
+```json
+{
+  "provider": {
+    "jan": {
+      "models": {
+        "Qwen3_5-27B-heretic_i1-IQ4_XS": {
+          "id": "Qwen3_5-27B-heretic_i1-IQ4_XS",
+          "name": "Qwen3.5 27B Heretic I1"
+        }
+      }
+    }
+  }
+}
 ```
 
 ## Requirements

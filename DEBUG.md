@@ -39,3 +39,19 @@ curl http://127.0.0.1:1337/v1/models -H "Authorization: Bearer $JAN_API_KEY"
 - `401 Unauthorized`: Jan API key missing/invalid.
 - `404 Not Found`: wrong API prefix/base URL (check `/v1`).
 - Connection refused: Jan Local API Server is not started.
+- `Not Found: No running session found for model '...'`: your configured model name does not match Jan's exact model `id`.
+
+To check the exact ID Jan expects:
+
+```bash
+curl -s http://127.0.0.1:1337/v1/models \
+  -H "Authorization: Bearer $JAN_API_KEY"
+```
+
+If Jan returns:
+
+```json
+{"data":[{"id":"Qwen3_5-27B-heretic_i1-IQ4_XS"}],"object":"list"}
+```
+
+then your config must use that exact `id`, not a human-readable GGUF filename variant.
